@@ -87,6 +87,10 @@ class MPDApp:
         self.carpeta_raiz_zonas = None
         self.canvas_raster = None
         self.canvas_shape = None
+        self.canvas_muestreo = None
+        self.canvas_interpolacion = None
+        self.carpeta_muestreo = None
+        self.carpeta_interpolacion = None
         self.configuracion = self._load_configuracion()
 
         # Inicializar UI
@@ -258,9 +262,17 @@ class MPDApp:
                                   command=lambda: self.mostrar_frame(self.frame_zonas))
         btn_zonas.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
+        btn_muestreo = ctk.CTkButton(menu_frame, text="Muestreo",
+                                     command=lambda: self.mostrar_frame(self.frame_muestreo))
+        btn_muestreo.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
+
+        btn_interpolaciones = ctk.CTkButton(menu_frame, text="Interpolaciones",
+                                            command=lambda: self.mostrar_frame(self.frame_interpolaciones))
+        btn_interpolaciones.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
+
         btn_config = ctk.CTkButton(menu_frame, text="Configuración",
                                    command=lambda: self.mostrar_frame(self.frame_configuracion))
-        btn_config.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
+        btn_config.grid(row=5, column=0, padx=20, pady=10, sticky="ew")
 
         # Logo
         if os.path.exists(LOGO_FILE):
@@ -276,6 +288,8 @@ class MPDApp:
         # ------- Frames principales: puntos y zonas -------
         self._create_frame_puntos(contenido_frame)
         self._create_frame_zonas(contenido_frame)
+        self._create_frame_muestreo(contenido_frame)
+        self._create_frame_interpolaciones(contenido_frame)
         self._create_frame_configuracion(contenido_frame)
 
     def _create_frame_puntos(self, parent):
@@ -471,6 +485,106 @@ class MPDApp:
         )
         btn_crear_dosificacion.grid(row=7, column=0, padx=20, pady=10, sticky="ew")
 
+    def _create_frame_muestreo(self, parent):
+        self.frame_muestreo = ctk.CTkFrame(parent, corner_radius=10)
+        self.frame_muestreo.grid(row=0, column=0, sticky="nsew")
+        self.frame_muestreo.grid_columnconfigure(0, weight=1)
+        self.frame_muestreo.grid_rowconfigure(2, weight=1)
+        self.frame_muestreo.grid_remove()
+
+        titulo = ctk.CTkLabel(self.frame_muestreo, text="Muestreo", font=("Arial", 18, "bold"))
+        titulo.grid(row=0, column=0, padx=20, pady=(15, 5), sticky="w")
+
+        frame_controles = ctk.CTkFrame(self.frame_muestreo, corner_radius=10)
+        frame_controles.grid(row=1, column=0, padx=15, pady=10, sticky="ew")
+        frame_controles.grid_columnconfigure((0, 1, 2), weight=1)
+
+        self.label_carpeta_muestreo = ctk.CTkLabel(frame_controles, text="Carpeta: no seleccionada")
+        self.label_carpeta_muestreo.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="w")
+
+        btn_carpeta_muestreo = ctk.CTkButton(
+            frame_controles,
+            text="Seleccionar carpeta",
+            command=self.seleccionar_carpeta_muestreo,
+        )
+        btn_carpeta_muestreo.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
+
+        btn_indices = ctk.CTkButton(
+            frame_controles,
+            text="Ver índices",
+            command=self.mostrar_indices_muestreo,
+        )
+        btn_indices.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+
+        btn_puntos = ctk.CTkButton(
+            frame_controles,
+            text="Ver puntos",
+            command=self.mostrar_puntos_muestreo,
+        )
+        btn_puntos.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+
+        btn_actualizar = ctk.CTkButton(
+            frame_controles,
+            text="Refrescar",
+            command=self._refrescar_muestreo,
+        )
+        btn_actualizar.grid(row=1, column=2, padx=5, pady=5, sticky="ew")
+
+        self.frame_mapa_muestreo = ctk.CTkFrame(self.frame_muestreo, corner_radius=10)
+        self.frame_mapa_muestreo.grid(row=2, column=0, padx=20, pady=15, sticky="nsew")
+        self.frame_mapa_muestreo.grid_rowconfigure(0, weight=1)
+        self.frame_mapa_muestreo.grid_columnconfigure(0, weight=1)
+
+    def _create_frame_interpolaciones(self, parent):
+        self.frame_interpolaciones = ctk.CTkFrame(parent, corner_radius=10)
+        self.frame_interpolaciones.grid(row=0, column=0, sticky="nsew")
+        self.frame_interpolaciones.grid_columnconfigure(0, weight=1)
+        self.frame_interpolaciones.grid_rowconfigure(2, weight=1)
+        self.frame_interpolaciones.grid_remove()
+
+        titulo = ctk.CTkLabel(self.frame_interpolaciones, text="Interpolaciones", font=("Arial", 18, "bold"))
+        titulo.grid(row=0, column=0, padx=20, pady=(15, 5), sticky="w")
+
+        frame_controles = ctk.CTkFrame(self.frame_interpolaciones, corner_radius=10)
+        frame_controles.grid(row=1, column=0, padx=15, pady=10, sticky="ew")
+        frame_controles.grid_columnconfigure((0, 1, 2), weight=1)
+
+        self.label_carpeta_inter = ctk.CTkLabel(frame_controles, text="Carpeta: no seleccionada")
+        self.label_carpeta_inter.grid(row=0, column=0, columnspan=2, padx=5, pady=5, sticky="w")
+
+        btn_carpeta_inter = ctk.CTkButton(
+            frame_controles,
+            text="Seleccionar carpeta",
+            command=self.seleccionar_carpeta_interpolacion,
+        )
+        btn_carpeta_inter.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
+
+        btn_ver_interpolacion = ctk.CTkButton(
+            frame_controles,
+            text="Ver interpolación",
+            command=self.mostrar_interpolacion,
+        )
+        btn_ver_interpolacion.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+
+        btn_ver_indices_inter = ctk.CTkButton(
+            frame_controles,
+            text="Ver índices",
+            command=self.mostrar_indices_interpolacion,
+        )
+        btn_ver_indices_inter.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+
+        btn_ver_puntos_inter = ctk.CTkButton(
+            frame_controles,
+            text="Ver puntos",
+            command=self.mostrar_puntos_interpolacion,
+        )
+        btn_ver_puntos_inter.grid(row=1, column=2, padx=5, pady=5, sticky="ew")
+
+        self.frame_mapa_inter = ctk.CTkFrame(self.frame_interpolaciones, corner_radius=10)
+        self.frame_mapa_inter.grid(row=2, column=0, padx=20, pady=15, sticky="nsew")
+        self.frame_mapa_inter.grid_rowconfigure(0, weight=1)
+        self.frame_mapa_inter.grid_columnconfigure(0, weight=1)
+
     def _create_frame_configuracion(self, parent):
         self.frame_configuracion = ctk.CTkScrollableFrame(parent, corner_radius=10, orientation="vertical")
         self.frame_configuracion.grid(row=0, column=0, sticky="nsew")
@@ -570,6 +684,178 @@ class MPDApp:
 
         self.label_estado_config = ctk.CTkLabel(self.frame_configuracion, text="")
         self.label_estado_config.grid(row=8, column=0, padx=15, pady=(0, 10), sticky="w")
+
+    # ----------------------------
+    # Selección de carpetas para muestreo/interpolación
+    # ----------------------------
+    def seleccionar_carpeta_muestreo(self):
+        initial_dir = (
+            self.configuracion.get("carpeta_trabajo_principal")
+            or self.configuracion.get("carpeta_principal_zonas")
+            or os.getcwd()
+        )
+        carpeta = filedialog.askdirectory(title="Selecciona la carpeta de muestreo", initialdir=initial_dir)
+        if carpeta:
+            self.carpeta_muestreo = normalizar_ruta(carpeta)
+            self.label_carpeta_muestreo.configure(text=f"Carpeta: {self.carpeta_muestreo}")
+
+    def seleccionar_carpeta_interpolacion(self):
+        initial_dir = (
+            self.configuracion.get("carpeta_trabajo_principal")
+            or self.configuracion.get("carpeta_principal_zonas")
+            or os.getcwd()
+        )
+        carpeta = filedialog.askdirectory(title="Selecciona la carpeta de interpolación", initialdir=initial_dir)
+        if carpeta:
+            self.carpeta_interpolacion = normalizar_ruta(carpeta)
+            self.label_carpeta_inter.configure(text=f"Carpeta: {self.carpeta_interpolacion}")
+
+    # ----------------------------
+    # Visores de muestreo
+    # ----------------------------
+    def _buscar_shp_en_carpeta(self, carpeta, patrones):
+        if not carpeta:
+            return None
+        for patron in patrones:
+            candidatos = glob.glob(os.path.join(carpeta, patron), recursive=True)
+            if candidatos:
+                return normalizar_ruta(sorted(candidatos)[0])
+        return None
+
+    def _seleccionar_shp_manual(self, titulo, carpeta_base=None):
+        initial_dir = carpeta_base or self.configuracion.get("carpeta_trabajo_principal") or os.getcwd()
+        archivo = filedialog.askopenfilename(
+            title=titulo,
+            initialdir=initial_dir,
+            filetypes=[("Shapefile", "*.shp"), ("Todos", "*.*")],
+        )
+        return normalizar_ruta(archivo) if archivo else None
+
+    def _capas_hdaste(self):
+        ruta_hdaste = self.configuracion.get("shapefile_hdaste")
+        if ruta_hdaste and os.path.exists(ruta_hdaste):
+            return [("HDASTE", ruta_hdaste, {"facecolor": "none", "edgecolor": "black", "linewidth": 0.8})]
+        return []
+
+    def _detectar_campo(self, gdf):
+        for col in gdf.columns:
+            if col == "geometry":
+                continue
+            if pd.api.types.is_numeric_dtype(gdf[col]):
+                return col
+        for col in gdf.columns:
+            if col != "geometry":
+                return col
+        return None
+
+    def _mostrar_mapa_shp(self, contenedor, canvas_attr, capas, titulo):
+        if not capas:
+            messagebox.showwarning("Atención", "No hay capas para mostrar.")
+            return
+
+        try:
+            fig, ax = plt.subplots(figsize=(6, 6))
+            leyendas = []
+            for nombre, ruta, estilo in capas:
+                gdf = gpd.read_file(ruta)
+                estilo = estilo.copy()
+                campo = estilo.pop("column", None)
+                if campo is None:
+                    campo = self._detectar_campo(gdf)
+                if campo and campo in gdf.columns and pd.api.types.is_numeric_dtype(gdf[campo]):
+                    gdf.plot(ax=ax, column=campo, cmap=estilo.get("cmap", "viridis"), legend=True, alpha=estilo.get("alpha", 0.7))
+                else:
+                    gdf.plot(ax=ax, **estilo)
+                leyendas.append(nombre)
+
+            ax.set_title(titulo)
+            ax.axis("off")
+            fig.tight_layout()
+
+            # limpiar canvas anterior
+            self._limpiar_canvas(canvas_attr)
+            canvas = FigureCanvasTkAgg(fig, master=contenedor)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill="both", expand=True)
+            setattr(self, canvas_attr, canvas)
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo mostrar el mapa:\n{e}")
+
+    def mostrar_indices_muestreo(self):
+        ruta_indices = self._buscar_shp_en_carpeta(
+            self.carpeta_muestreo,
+            ["SHP/*Indice*.shp", "SHP/*Indice*/*.shp", "**/Indice*.shp", "**/Indices*.shp"],
+        )
+        if not ruta_indices:
+            ruta_indices = self._seleccionar_shp_manual("Selecciona el SHP de índices", self.carpeta_muestreo)
+        if not ruta_indices:
+            return
+        capas = self._capas_hdaste() + [("Índices", ruta_indices, {"edgecolor": "gray", "alpha": 0.7})]
+        self._mostrar_mapa_shp(self.frame_mapa_muestreo, "canvas_muestreo", capas, "Índices y HDASTE")
+        self.ruta_indices_muestreo = ruta_indices
+
+    def mostrar_puntos_muestreo(self):
+        ruta_puntos = self._buscar_shp_en_carpeta(
+            self.carpeta_muestreo,
+            ["SHP/Muestras*.shp", "**/Muestras*.shp"],
+        )
+        if not ruta_puntos:
+            ruta_puntos = self._seleccionar_shp_manual("Selecciona el SHP de puntos", self.carpeta_muestreo)
+        if not ruta_puntos:
+            return
+        capas = self._capas_hdaste() + [("Puntos", ruta_puntos, {"color": "red", "markersize": 4})]
+        self._mostrar_mapa_shp(self.frame_mapa_muestreo, "canvas_muestreo", capas, "Puntos de muestreo")
+        self.ruta_puntos_muestreo = ruta_puntos
+
+    def _refrescar_muestreo(self):
+        if getattr(self, "ruta_indices_muestreo", None):
+            self.mostrar_indices_muestreo()
+        elif getattr(self, "ruta_puntos_muestreo", None):
+            self.mostrar_puntos_muestreo()
+        else:
+            messagebox.showinfo("Info", "Aún no has cargado índices o puntos para refrescar.")
+
+    # ----------------------------
+    # Visores de interpolación
+    # ----------------------------
+    def mostrar_interpolacion(self):
+        ruta_inter = self._buscar_shp_en_carpeta(
+            getattr(self, "carpeta_interpolacion", None),
+            ["SHP/*Inter*.shp", "**/Interpol*.shp", "**/Inter*.shp"],
+        )
+        if not ruta_inter:
+            ruta_inter = self._seleccionar_shp_manual("Selecciona el SHP de interpolación", getattr(self, "carpeta_interpolacion", None))
+        if not ruta_inter:
+            return
+        capas = self._capas_hdaste() + [("Interpolación", ruta_inter, {"edgecolor": "black", "alpha": 0.7})]
+        self._mostrar_mapa_shp(self.frame_mapa_inter, "canvas_interpolacion", capas, "Interpolación con HDASTE")
+        self.ruta_interpolacion = ruta_inter
+
+    def mostrar_indices_interpolacion(self):
+        ruta_indices = self._buscar_shp_en_carpeta(
+            getattr(self, "carpeta_interpolacion", None),
+            ["SHP/*Indice*.shp", "**/Indice*.shp", "**/Indices*.shp"],
+        )
+        if not ruta_indices:
+            ruta_indices = self._seleccionar_shp_manual("Selecciona el SHP de índices", getattr(self, "carpeta_interpolacion", None))
+        if not ruta_indices:
+            return
+        capas = self._capas_hdaste() + [("Índices", ruta_indices, {"edgecolor": "gray", "alpha": 0.7})]
+        self._mostrar_mapa_shp(self.frame_mapa_inter, "canvas_interpolacion", capas, "Índices y HDASTE")
+        self.ruta_indices_inter = ruta_indices
+
+    def mostrar_puntos_interpolacion(self):
+        ruta_puntos = self._buscar_shp_en_carpeta(
+            getattr(self, "carpeta_interpolacion", None),
+            ["SHP/Muestras*.shp", "**/Muestras*.shp"],
+        )
+        if not ruta_puntos:
+            ruta_puntos = self._seleccionar_shp_manual("Selecciona el SHP de puntos", getattr(self, "carpeta_interpolacion", None))
+        if not ruta_puntos:
+            return
+        capas = self._capas_hdaste() + [("Puntos", ruta_puntos, {"color": "red", "markersize": 4})]
+        self._mostrar_mapa_shp(self.frame_mapa_inter, "canvas_interpolacion", capas, "Puntos y HDASTE")
+        self.ruta_puntos_inter = ruta_puntos
 
     # ----------------------------
     # Funcionalidad de selección de carpeta / cronológico
@@ -675,6 +961,15 @@ class MPDApp:
             except Exception:
                 pass
             self.canvas_shape = None
+
+    def _limpiar_canvas(self, attr_name):
+        canvas = getattr(self, attr_name, None)
+        if canvas:
+            try:
+                canvas.get_tk_widget().destroy()
+            except Exception:
+                pass
+            setattr(self, attr_name, None)
 
     # ----------------------------
     # Mostrar zonas (raster / shape)
@@ -787,7 +1082,14 @@ class MPDApp:
     # ----------------------------
     def mostrar_frame(self, frame):
         # ocultar todos y mostrar el solicitado
-        for f in (self.frame_bienvenida, self.frame_puntos, self.frame_zonas, self.frame_configuracion):
+        for f in (
+            self.frame_bienvenida,
+            self.frame_puntos,
+            self.frame_zonas,
+            self.frame_muestreo,
+            self.frame_interpolaciones,
+            self.frame_configuracion,
+        ):
             try:
                 f.grid_remove()
             except Exception:
