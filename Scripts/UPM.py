@@ -11,6 +11,12 @@ haciendas = []
 suertes_actuales = []
 base_path = ""
 
+
+def set_base_path(path):
+    """Permite configurar la carpeta base desde otras pantallas."""
+    global base_path
+    base_path = os.path.normpath(os.path.abspath(path)) if path else ""
+
 # --- Funciones ---
 def seleccionar_carpeta_base(entry_base, label_info, tree, boton_ver_suertes):
     """Selecciona la carpeta base donde se encuentran las haciendas"""
